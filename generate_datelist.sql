@@ -1,12 +1,13 @@
+-- ถ้าต้องการเปลี่ยนเป็นเดือนอื่นให้เปลี่ยน Date ที่ users เเละ series
 WITH users AS(
 	SELECT * FROM user_cumulated 
-	WHERE date = DATE('2023-01-30') -- Last day 
+	WHERE date = DATE('2023-01-31') -- Last day 
 ),
 
 	series AS(
 
 		SELECT * 
-		FROM generate_series(DATE('2023-01-01'), DATE('2023-01-31'), INTERVAL '1 day') 
+		FROM generate_series(DATE('2023-01-01'), DATE('2023-01-31'), INTERVAL '1 day') -- + ไปทีละ 1 วัน
 		    as series_date
 	),
 
@@ -23,20 +24,18 @@ WITH users AS(
 					CROSS JOIN series
 		
 		)
-SELECT * FROM place_holder_ints
 		
+-- Analytic part to gain active by week month
+-- สามารถเปลี่่ยนการใส่เลข 1 เพื่อให้มันตรวจสอบช่วงที่เราต้องการได้
 SELECT 
 	user_id,
-	CAST(CAST(SUM( placeholder_int_value) AS BIGINT) AS BIT(32)),
-	BIT_COUNT(CAST(CAST(SUM( placeholder_int_value) AS BIGINT) AS BIT(32)))
+	CAST(SUM(CAST(placeholder_int_value AS INTEGER)) AS BIT(32)),
+	BIT_COUNT(CAST(SUM(CAST(placeholder_int_value AS INTEGER)) AS BIT(32))) > 0 
+		AS dim_is_monthly_active,
+	BIT_COUNT(CAST('11111110000000000000000000000000' AS BIT(32)) & CAST(SUM(CAST( placeholder_int_value AS INTEGER)) AS BIT(32))) > 0 
+		AS dim_is_weekly_active,
+	BIT_COUNT(CAST('10000000000000000000000000000000' AS BIT(32)) & CAST(SUM(CAST( placeholder_int_value AS INTEGER)) AS BIT(32))) > 0 
+		AS dim_is_daily_active
+			
 FROM place_holder_ints
 GROUP BY user_id	
-
-		AS dim_is_monthly_acitive,
-	BIT_COUNT(CAST('11111110000000000000000000000000' AS BIT(32)) &
-		CAST(CAST(SUM( placeholder_int_value) AS BIGINT) AS BIT(32)) > 0,
-	BIT_COUNT(CAST('10000000000000000000000000000000' AS BIT(32)) &
-		CAST(CAST(SUM( placeholder_int_value) AS BIGINT) AS BIT(32)) > 0		
-FROM place_holder_ints
-GROUP BY user_id
-
